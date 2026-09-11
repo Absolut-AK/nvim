@@ -24,7 +24,20 @@ vim.cmd("hi NonText guibg=NONE ctermbg=NONE")
 vim.opt.rtp:prepend(lazypath)
 vim.g.mapleader = " "
 vim.g.maplocalleader = "\\"
+vim.g.clipboard = {
+	name = 'WslClipboard',
+	copy = {
+		["+"] = 'clip.exe',
+		["*"] = 'clip.exe',
+	},
+	paste = {
+		["+"] = 'powershell.exe -c [Console]::Out.Write($(Get-Clipboard -Raw).tostring().replace("`r", ""))',
+		["*"] = 'powershell.exe -c [Console]::Out.Write($(Get-Clipboard -Raw).tostring().replace("`r", ""))',
+	},
+	cache_enabled = 0,
+}
 vim.opt.rtp:append(vim.fn.stdpath("config"))
+vim.opt.clipboard = "unnamedplus"
 
 require("lazy").setup({
 	spec = {
@@ -32,12 +45,7 @@ require("lazy").setup({
 		{'nvim-telescope/telescope.nvim', version = '0.1.8', dependencies = { 'nvim-lua/plenary.nvim' }},
 		{"nvim-treesitter/nvim-treesitter", version = '*', build = ":TSUpdate"},
 		{"ThePrimeagen/harpoon"},
-		{"neovim/nvim-lspconfig", version = "*", config = function()
-			local lspconfig = require("lspconfig")
-			lspconfig.pyright.setup{}
-			require("lsp.luau")
-
-		end},
+		{"neovim/nvim-lspconfig"},
 		{"mbbill/undotree"},
 		{"hrsh7th/nvim-cmp"},
 		{"hrsh7th/cmp-nvim-lsp"},
@@ -55,6 +63,7 @@ checker = { enabled = true },
 vim.keymap.set('n', '<leader>u', vim.cmd.UndotreeToggle)
 vim.keymap.set('n', '<leader>pv', vim.cmd.Ex)
 vim.keymap.set('n', '<leader>py', ":!python3 %<CR>", {noremap = true, silent=false })
+vim.keymap.set('n', '<leader>e', vim.diagnostic.open_float, opts)
 
 local builtin = require('telescope.builtin')
 vim.keymap.set('n', '<leader>ff', builtin.find_files)
@@ -103,10 +112,9 @@ vim.opt.signcolumn = 'yes'
 
 -- Add cmp_nvim_lsp capabilities settings to lspconfig
 -- This should be executed before you configure any language server
-local lspconfig_defaults = require('lspconfig').util.default_config
-lspconfig_defaults.capabilities = vim.tbl_deep_extend(
+local default_capabilities = vim.tbl_deep_extend(
 	'force',
-	lspconfig_defaults.capabilities,
+	vim.lsp.protocol.make_client_capabilities(),
 	require('cmp_nvim_lsp').default_capabilities()
 )
 
@@ -131,24 +139,35 @@ vim.api.nvim_create_autocmd('LspAttach', {
 })
 --snippets
 vim.api.nvim_create_autocmd("BufWritePost", {
-  pattern = "sourcemap.json",
-  callback = function()
-    for _, client in pairs(vim.lsp.get_active_clients()) do
-      if client.name == "luau_lsp" then
-        client.stop()
-        vim.defer_fn(function()
-          vim.cmd("edit") -- reload buffer to reattach LSP
-        end, 100)
-      end
-    end
-  end,
+	pattern = "sourcemap.json",
+	callback = function()
+		for _, client in pairs(vim.lsp.get_clients()) do
+			if client.name == "luau_lsp" then
+				client.stop()
+				vim.defer_fn(function()
+					vim.cmd("edit") -- reload buffer to reattach LSP
+				end, 100)
+			end
+		end
+	end,
 })
 
 -- You'll find a list of language servers here:
 -- https://github.com/neovim/nvim-lspconfig/blob/master/doc/configs.md
 -- These are example language servers. 
-require('lspconfig').gleam.setup({})
-require('lspconfig').ocamllsp.setup({})
+vim.lsp.config.pyright = { capabilities = default_capabilities }
+vim.lsp.config.gleam = { capabilities = default_capabilities }
+vim.lsp.config.ocamllsp = { capabilities = default_capabilities }
+vim.lsp.config.luau_ls = {
+	cmd = { 'luau-lsp', 'lsp',
+	'--definitions=' .. vim.fn.expand('~/.local/share/luau-lsp/globalTypes.d.luau'),
+},
+filetypes = { 'luau', 'lua' },
+root_markers = { '.git', 'stylelua.toml', 'sourcemap.json' },
+}
+vim.lsp.enable('luau_ls')
+
+vim.lsp.enable({ "pyright", "gleam", "ocamllsp" })
 
 local cmp = require('cmp')
 
@@ -167,85 +186,90 @@ cmp.setup({
 		['<C-p>'] = cmp.mapping.select_prev_item(),
 		['<CR>'] = cmp.mapping.confirm({ select = true }), -- Confirm selection
 	}),
+	experimental = {
+		ghost_text = true,
+	},
 })
 
 -- --lua lsp not working rn
 -- require'lspconfig'.lua_ls.setup {
--- 	on_init = function(client)
--- 		if client.workspace_folders then
--- 			local path = client.workspace_folders[1].name
--- 			if path ~= vim.fn.stdpath('config') and (vim.loop.fs_stat(path..'/.luarc.json') or vim.loop.fs_stat(path..'/.luarc.jsonc')) then
--- 				return
--- 			end
--- 		end
---
--- 		client.config.settings.Lua = vim.tbl_deep_extend('force', client.config.settings.Lua, {
--- 			runtime = {
--- 				-- Tell the language server which version of Lua you're using
--- 				-- (most likely LuaJIT in the case of Neovim)
--- 				version = 'LuaJIT'
--- 			},
--- 			-- Make the server aware of Neovim runtime files
--- 			workspace = {
--- 				checkThirdParty = false,
--- 				library = {
--- 					vim.env.VIMRUNTIME
--- 					-- Depending on the usage, you might want to add additional paths here.
--- 					-- "${3rd}/luv/library"
--- 					-- "${3rd}/busted/library",
--- 				}
--- 				-- or pull in all of 'runtimepath'. NOTE: this is a lot slower and will cause issues when working on your own configuration (see https://github.com/neovim/nvim-lspconfig/issues/3189)
--- 				-- library = vim.api.nvim_get_runtime_file("", true)
--- 			}
--- 		})
--- 	end,
--- 	settings = {
--- 		Lua = {}
--- 	}
--- }
+	-- 	on_init = function(client)
+		-- 		if client.workspace_folders then
+		-- 			local path = client.workspace_folders[1].name
+		-- 			if path ~= vim.fn.stdpath('config') and (vim.loop.fs_stat(path..'/.luarc.json') or vim.loop.fs_stat(path..'/.luarc.jsonc')) then
+		-- 				return
+		-- 			end
+		-- 		end
+		--
+		-- 		client.config.settings.Lua = vim.tbl_deep_extend('force', client.config.settings.Lua, {
+			-- 			runtime = {
+				-- 				-- Tell the language server which version of Lua you're using
+				-- 				-- (most likely LuaJIT in the case of Neovim)
+				-- 				version = 'LuaJIT'
+				-- 			},
+				-- 			-- Make the server aware of Neovim runtime files
+				-- 			workspace = {
+					-- 				checkThirdParty = false,
+					-- 				library = {
+						-- 					vim.env.VIMRUNTIME
+						-- 					-- Depending on the usage, you might want to add additional paths here.
+						-- 					-- "${3rd}/luv/library"
+						-- 					-- "${3rd}/busted/library",
+						-- 				}
+						-- 				-- or pull in all of 'runtimepath'. NOTE: this is a lot slower and will cause issues when working on your own configuration (see https://github.com/neovim/nvim-lspconfig/issues/3189)
+						-- 				-- library = vim.api.nvim_get_runtime_file("", true)
+						-- 			}
+						-- 		})
+						-- 	end,
+						-- 	settings = {
+							-- 		Lua = {}
+							-- 	}
+							-- }
 
-require('lspconfig').anakin_language_server.setup{
-	cmd = { vim.fn.expand("~/anakin-language-server/anakinls")},
-	filetypes = { "python" },
-	settings = {
-		anakin = { 
-			diagnostics = { 
-				enabled = true,
-				disable = {},
-				enable = { 
-					"ImportStarNotPermitted",
-					"UndefinedExport",
-					"UndefinedLocal",
-					"UndefinedName",
-					"DuplicateArgument",
-					"MultiValueRepeatedKeyLiteral",
-					"MultiValueRepeatedKeyVariable",
-					"FutureFeatureNotDefined",
-					"LateFutureImport",
-					"ReturnOutsideFunction",
-					"YieldOutsideFunction",
-					"ContinueOutsideLoop",
-					"BreakOutsideLoop",
-					"TwoStarredExpressions",
-					"TooManyExpressionsInStarredAssignment",
-					"ForwardAnnotationSyntaxError",
-					"RaiseNotImplemented",
-					"StringDotFormatExtraPositionalArguments",
-					"StringDotFormatExtraNamedArguments",
-					"StringDotFormatMissingArgument",
-					"StringDotFormatMixingAutomatic",
-					"StringDotFormatInvalidFormat",
-					"PercentFormatInvalidFormat",
-					"PercentFormatMixedPositionalAndNamed",
-					"PercentFormatUnsupportedFormat",
-					"PercentFormatPositionalCountMismatch",
-					"PercentFormatExtraNamedArguments",
-					"PercentFormatMissingArgument",
-					"PercentFormatExpectedMapping",
-					"PercentFormatExpectedSequence",
-					"PercentFormatStarRequiresSequence"
-				}
-			}
-		}
-	}
-}
+							vim.lsp.config.anakin_language_server = {
+								cmd = { vim.fn.expand("~/anakin-language-server/anakinls")},
+								filetypes = { "python" },
+								capabilities = default_capabilities,
+								settings = {
+									anakin = { 
+										diagnostics = { 
+											enabled = true,
+											disable = {},
+											enable = { 
+												"ImportStarNotPermitted",
+												"UndefinedExport",
+												"UndefinedLocal",
+												"UndefinedName",
+												"DuplicateArgument",
+												"MultiValueRepeatedKeyLiteral",
+												"MultiValueRepeatedKeyVariable",
+												"FutureFeatureNotDefined",
+												"LateFutureImport",
+												"ReturnOutsideFunction",
+												"YieldOutsideFunction",
+												"ContinueOutsideLoop",
+												"BreakOutsideLoop",
+												"TwoStarredExpressions",
+												"TooManyExpressionsInStarredAssignment",
+												"ForwardAnnotationSyntaxError",
+												"RaiseNotImplemented",
+												"StringDotFormatExtraPositionalArguments",
+												"StringDotFormatExtraNamedArguments",
+												"StringDotFormatMissingArgument",
+												"StringDotFormatMixingAutomatic",
+												"StringDotFormatInvalidFormat",
+												"PercentFormatInvalidFormat",
+												"PercentFormatMixedPositionalAndNamed",
+												"PercentFormatUnsupportedFormat",
+												"PercentFormatPositionalCountMismatch",
+												"PercentFormatExtraNamedArguments",
+												"PercentFormatMissingArgument",
+												"PercentFormatExpectedMapping",
+												"PercentFormatExpectedSequence",
+												"PercentFormatStarRequiresSequence"
+											}
+										}
+									}
+								}
+							}
+							vim.lsp.enable("anakin_language_server")
