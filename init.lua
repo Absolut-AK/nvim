@@ -41,7 +41,9 @@ vim.opt.clipboard = "unnamedplus"
 
 require("lazy").setup({
 	spec = {
-		{"folke/tokyonight.nvim", lazy = false, priority = 1000, opts = {},},
+		{"rose-pine/neovim",name = "rose-pine", config = true, priority = 1000, opts = {},},
+		{"ellisonleao/gruvbox.nvim",config = true, priority = 1000, opts = {},},
+		{"folke/tokyonight.nvim",lazy = false, priority = 1000, opts = {},},
 		{'nvim-telescope/telescope.nvim', version = '0.1.8', dependencies = { 'nvim-lua/plenary.nvim' }},
 		{"nvim-treesitter/nvim-treesitter", version = '*', build = ":TSUpdate"},
 		{"ThePrimeagen/harpoon"},
@@ -88,12 +90,11 @@ vim.keymap.set('n', '<leader>h', function () harpoon.toggle_quick_menu() end)
 
 local configs = require("nvim-treesitter.configs")
 configs.setup({
-	ensure_installed = {"lua", "python", "vim", "bash", "json", "markdown", "luau"},
+	ensure_installed = {"rust","lua", "python", "vim", "bash", "json", "markdown", "luau"},
 	sync_install = false,
 	auto_install = true,
 	highlight = { enable = true, additional_vim_regex_highlighting = false },
 })
-
 require("tokyonight").setup({
 	transparent = true,
 	styles = {
@@ -101,8 +102,131 @@ require("tokyonight").setup({
 		floats = "transparent"
 	}
 })
+vim.cmd("colorscheme tokyonight-moon")
 
-vim.cmd("colorscheme tokyonight")
+vim.api.nvim_set_hl(0, "@keyword.import.rust", { fg = "#ff9e64" })
+vim.api.nvim_set_hl(0, "Function", { fg = "#f7768e" })
+vim.api.nvim_set_hl(0, "@function", { fg = "#f7768e" })
+vim.api.nvim_set_hl(0, "@function.call", { fg = "#f7768e" })
+vim.api.nvim_set_hl(0, "@function.method", { fg = "#f7768e" })
+vim.api.nvim_set_hl(0, "@function.method.call", { fg = "#f7768e" })
+
+local yellow = "#e0af68"
+-- vim.api.nvim_set_hl(0, "Type", { fg = yellow })
+-- vim.api.nvim_set_hl(0, "@type", { fg = yellow })
+-- vim.api.nvim_set_hl(0, "@type.builtin", { fg = yellow })
+
+--
+-- Default options:
+-- require("gruvbox").setup({
+--   terminal_colors = true, -- add neovim terminal colors
+--   undercurl = true,
+--   underline = true,
+--   bold = true,
+--   italic = {
+--     strings = true,
+--     emphasis = true,
+--     comments = true,
+--     operators = false,
+--     folds = true,
+--   },
+--   strikethrough = true,
+--   invert_selection = false,
+--   invert_signs = false,
+--   invert_tabline = false,
+--   inverse = true, -- invert background for search, diffs, statuslines and errors
+--   contrast = "", -- can be "hard", "soft" or empty string
+--   palette_overrides = {},
+--   overrides = {},
+--   dim_inactive = false,
+--   transparent_mode = true,
+-- })
+-- vim.cmd("colorscheme gruvbox")
+--
+-- require("rose-pine").setup({
+--     variant = "moon", -- auto, main, moon, or dawn
+--     dark_variant = "main", -- main, moon, or dawn
+--     dim_inactive_windows = false,
+--     extend_background_behind_borders = true,
+--
+--     enable = {
+--         terminal = true,
+--         legacy_highlights = true, -- Improve compatibility for previous versions of Neovim
+--         migrations = true, -- Handle deprecated options automatically
+--     },
+--
+--     styles = {
+--         bold = true,
+--         italic = true,
+--         transparency = true,
+--     },
+--
+--     groups = {
+--         border = "muted",
+--         link = "iris",
+--         panel = "surface",
+--
+--         error = "love",
+--         hint = "iris",
+--         info = "foam",
+--         note = "pine",
+--         todo = "rose",
+--         warn = "gold",
+--
+--         git_add = "foam",
+--         git_change = "rose",
+--         git_delete = "love",
+--         git_dirty = "rose",
+--         git_ignore = "muted",
+--         git_merge = "iris",
+--         git_rename = "pine",
+--         git_stage = "iris",
+--         git_text = "rose",
+--         git_untracked = "subtle",
+--
+--         h1 = "iris",
+--         h2 = "foam",
+--         h3 = "rose",
+--         h4 = "gold",
+--         h5 = "pine",
+--         h6 = "foam",
+--     },
+--
+--     palette = {
+--         -- Override the builtin palette per variant
+--         -- moon = {
+--         --     base = '#18191a',
+--         --     overlay = '#363738',
+--         -- },
+--     },
+--
+-- 	-- NOTE: Highlight groups are extended (merged) by default. Disable this
+-- 	-- per group via `inherit = false`
+--     highlight_groups = {
+--         -- Comment = { fg = "foam" },
+--         -- StatusLine = { fg = "love", bg = "love", blend = 15 },
+--         -- VertSplit = { fg = "muted", bg = "muted" },
+--         -- Visual = { fg = "base", bg = "text", inherit = false },
+--     },
+--
+--     before_highlight = function(group, highlight, palette)
+--         -- Disable all undercurls
+--         -- if highlight.undercurl then
+--         --     highlight.undercurl = false
+--         -- end
+--         --
+--         -- Change palette colour
+--         -- if highlight.fg == palette.pine then
+--         --     highlight.fg = palette.foam
+--         -- end
+--     end,
+-- })
+--
+-- vim.cmd("colorscheme rose-pine-moon")
+-- vim.cmd("colorscheme rose-pine-main")
+-- vim.cmd("colorscheme rose-pine-moon")
+-- vim.cmd("colorscheme rose-pine-dawn")
+--
 -- NOTE: to make any of this work you need a language server.
 -- If you don't know what that is, watch this 5 min video:
 -- https://www.youtube.com/watch?v=LaS32vctfOY
@@ -162,114 +286,113 @@ vim.lsp.config.luau_ls = {
 	cmd = { 'luau-lsp', 'lsp',
 	'--definitions=' .. vim.fn.expand('~/.local/share/luau-lsp/globalTypes.d.luau'),
 },
-filetypes = { 'luau', 'lua' },
+filetypes = { 'luau'},
 root_markers = { '.git', 'stylelua.toml', 'sourcemap.json' },
-}
-vim.lsp.enable('luau_ls')
+	}
+	vim.lsp.enable('luau_ls')
 
-vim.lsp.enable({ "pyright", "gleam", "ocamllsp" })
+	vim.lsp.enable({ "pyright", "gleam", "ocamllsp" })
+	vim.lsp.enable("rust_analyzer")
 
-local cmp = require('cmp')
+	local cmp = require('cmp')
 
-cmp.setup({
-	sources = {
-		{ name = 'nvim_lsp' },
-	},
-	snippet = {
-		expand = function(args)
-			require('luasnip').lsp_expand(args.body) -- Use only LuaSnip
-		end,
-	},
-	mapping = cmp.mapping.preset.insert({
-		-- Add keybindings for navigation and selection
-		['<C-n>'] = cmp.mapping.select_next_item(),
-		['<C-p>'] = cmp.mapping.select_prev_item(),
-		['<CR>'] = cmp.mapping.confirm({ select = true }), -- Confirm selection
-	}),
-	experimental = {
-		ghost_text = true,
-	},
-})
-
--- --lua lsp not working rn
--- require'lspconfig'.lua_ls.setup {
-	-- 	on_init = function(client)
-		-- 		if client.workspace_folders then
-		-- 			local path = client.workspace_folders[1].name
-		-- 			if path ~= vim.fn.stdpath('config') and (vim.loop.fs_stat(path..'/.luarc.json') or vim.loop.fs_stat(path..'/.luarc.jsonc')) then
-		-- 				return
-		-- 			end
-		-- 		end
-		--
-		-- 		client.config.settings.Lua = vim.tbl_deep_extend('force', client.config.settings.Lua, {
-			-- 			runtime = {
-				-- 				-- Tell the language server which version of Lua you're using
-				-- 				-- (most likely LuaJIT in the case of Neovim)
-				-- 				version = 'LuaJIT'
-				-- 			},
-				-- 			-- Make the server aware of Neovim runtime files
-				-- 			workspace = {
-					-- 				checkThirdParty = false,
-					-- 				library = {
-						-- 					vim.env.VIMRUNTIME
-						-- 					-- Depending on the usage, you might want to add additional paths here.
-						-- 					-- "${3rd}/luv/library"
-						-- 					-- "${3rd}/busted/library",
-						-- 				}
-						-- 				-- or pull in all of 'runtimepath'. NOTE: this is a lot slower and will cause issues when working on your own configuration (see https://github.com/neovim/nvim-lspconfig/issues/3189)
-						-- 				-- library = vim.api.nvim_get_runtime_file("", true)
-						-- 			}
-						-- 		})
-						-- 	end,
-						-- 	settings = {
-							-- 		Lua = {}
-							-- 	}
-							-- }
-
-							vim.lsp.config.anakin_language_server = {
-								cmd = { vim.fn.expand("~/anakin-language-server/anakinls")},
-								filetypes = { "python" },
-								capabilities = default_capabilities,
-								settings = {
-									anakin = { 
-										diagnostics = { 
-											enabled = true,
-											disable = {},
-											enable = { 
-												"ImportStarNotPermitted",
-												"UndefinedExport",
-												"UndefinedLocal",
-												"UndefinedName",
-												"DuplicateArgument",
-												"MultiValueRepeatedKeyLiteral",
-												"MultiValueRepeatedKeyVariable",
-												"FutureFeatureNotDefined",
-												"LateFutureImport",
-												"ReturnOutsideFunction",
-												"YieldOutsideFunction",
-												"ContinueOutsideLoop",
-												"BreakOutsideLoop",
-												"TwoStarredExpressions",
-												"TooManyExpressionsInStarredAssignment",
-												"ForwardAnnotationSyntaxError",
-												"RaiseNotImplemented",
-												"StringDotFormatExtraPositionalArguments",
-												"StringDotFormatExtraNamedArguments",
-												"StringDotFormatMissingArgument",
-												"StringDotFormatMixingAutomatic",
-												"StringDotFormatInvalidFormat",
-												"PercentFormatInvalidFormat",
-												"PercentFormatMixedPositionalAndNamed",
-												"PercentFormatUnsupportedFormat",
-												"PercentFormatPositionalCountMismatch",
-												"PercentFormatExtraNamedArguments",
-												"PercentFormatMissingArgument",
-												"PercentFormatExpectedMapping",
-												"PercentFormatExpectedSequence",
-												"PercentFormatStarRequiresSequence"
+	cmp.setup({
+		sources = {
+			{ name = 'nvim_lsp' },
+		},
+		snippet = {
+			expand = function(args)
+				require('luasnip').lsp_expand(args.body) -- Use only LuaSnip
+			end,
+		},
+		mapping = cmp.mapping.preset.insert({
+			-- Add keybindings for navigation and selection
+			['<C-n>'] = cmp.mapping.select_next_item(),
+			['<C-p>'] = cmp.mapping.select_prev_item(),
+			['<CR>'] = cmp.mapping.confirm({ select = true }), -- Confirm selection
+		}),
+		experimental = {
+			ghost_text = true,
+		},
+	})
+	--lua lsp not working rn
+	-- require'lspconfig'.lua_ls.setup {
+		-- 	on_init = function(client)
+			-- 		if client.workspace_folders then
+			-- 			local path = client.workspace_folders[1].name
+			-- 			if path ~= vim.fn.stdpath('config') and (vim.loop.fs_stat(path..'/.luarc.json') or vim.loop.fs_stat(path..'/.luarc.jsonc')) then
+			-- 				return
+			-- 			end
+			-- 		end
+			--
+			-- 		client.config.settings.Lua = vim.tbl_deep_extend('force', client.config.settings.Lua, {
+				-- 			runtime = {
+					-- 				-- Tell the language server which version of Lua you're using
+					-- 				-- (most likely LuaJIT in the case of Neovim)
+					-- 				version = 'LuaJIT'
+					-- 			},
+					-- 			-- Make the server aware of Neovim runtime files
+					-- 			workspace = {
+						-- 				checkThirdParty = false,
+						-- 				library = {
+							-- 					vim.env.VIMRUNTIME
+							-- 					-- Depending on the usage, you might want to add additional paths here.
+							-- 					-- "${3rd}/luv/library"
+							-- 					-- "${3rd}/busted/library",
+							-- 				}
+							-- 				-- or pull in all of 'runtimepath'. NOTE: this is a lot slower and will cause issues when working on your own configuration (see https://github.com/neovim/nvim-lspconfig/issues/3189)
+							-- 				-- library = vim.api.nvim_get_runtime_file("", true)
+							-- 			}
+							-- 		})
+							-- 	end,
+							-- 	settings = {
+								-- 		Lua = {}
+								-- 	}
+								-- }
+								vim.lsp.config.anakin_language_server = {
+									cmd = { vim.fn.expand("~/anakin-language-server/anakinls")},
+									filetypes = { "python" },
+									capabilities = default_capabilities,
+									settings = {
+										anakin = { 
+											diagnostics = { 
+												enabled = true,
+												disable = {},
+												enable = { 
+													"ImportStarNotPermitted",
+													"UndefinedExport",
+													"UndefinedLocal",
+													"UndefinedName",
+													"DuplicateArgument",
+													"MultiValueRepeatedKeyLiteral",
+													"MultiValueRepeatedKeyVariable",
+													"FutureFeatureNotDefined",
+													"LateFutureImport",
+													"ReturnOutsideFunction",
+													"YieldOutsideFunction",
+													"ContinueOutsideLoop",
+													"BreakOutsideLoop",
+													"TwoStarredExpressions",
+													"TooManyExpressionsInStarredAssignment",
+													"ForwardAnnotationSyntaxError",
+													"RaiseNotImplemented",
+													"StringDotFormatExtraPositionalArguments",
+													"StringDotFormatExtraNamedArguments",
+													"StringDotFormatMissingArgument",
+													"StringDotFormatMixingAutomatic",
+													"StringDotFormatInvalidFormat",
+													"PercentFormatInvalidFormat",
+													"PercentFormatMixedPositionalAndNamed",
+													"PercentFormatUnsupportedFormat",
+													"PercentFormatPositionalCountMismatch",
+													"PercentFormatExtraNamedArguments",
+													"PercentFormatMissingArgument",
+													"PercentFormatExpectedMapping",
+													"PercentFormatExpectedSequence",
+													"PercentFormatStarRequiresSequence"
+												}
 											}
 										}
 									}
 								}
-							}
-							vim.lsp.enable("anakin_language_server")
+								vim.lsp.enable("anakin_language_server")
