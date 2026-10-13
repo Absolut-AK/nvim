@@ -34,6 +34,9 @@ vim.opt.splitbelow = true
 vim.opt.updatetime = 250
 vim.opt.signcolumn = "yes"
 
+-- command!
+vim.cmd([[command! -nargs=+ Tf !cd %:p:h && <args>]])
+
 -- WSL clipboard
 vim.g.clipboard = {
 	name = "WslClipboard",
@@ -50,7 +53,7 @@ vim.g.clipboard = {
 vim.opt.clipboard = "unnamedplus"
 
 vim.diagnostic.config({
-	virtual_text = true, -- show errors at the end of the line
+	virtual_text = false, -- show errors at the end of the line
 	severity_sort = true,
 	float = { border = "rounded" },
 })
@@ -64,10 +67,14 @@ require("lazy").setup({
 		{ "ellisonleao/gruvbox.nvim", lazy = true },
 
 		-- Navigation
-		{ "nvim-telescope/telescope.nvim", branch = "master", dependencies = {
-			"nvim-lua/plenary.nvim",
-			{ "nvim-telescope/telescope-fzf-native.nvim", build = "make" },
-		} },
+		{
+			"nvim-telescope/telescope.nvim",
+			branch = "master",
+			dependencies = {
+				"nvim-lua/plenary.nvim",
+				{ "nvim-telescope/telescope-fzf-native.nvim", build = "make" },
+			},
+		},
 		{ "ThePrimeagen/harpoon", branch = "harpoon2", dependencies = { "nvim-lua/plenary.nvim" } },
 		{ "mbbill/undotree" },
 		{ "folke/which-key.nvim", event = "VeryLazy", opts = {} }, -- shows available keys after you press <leader>
@@ -110,6 +117,8 @@ require("tokyonight").setup({
 		hl["@function.call"] = { fg = c.red }
 		hl["@function.method"] = { fg = c.red }
 		hl["@function.method.call"] = { fg = c.red }
+		hl["@variable.builtin"] = { fg = c.magenta }
+		hl["@lsp.type.selfKeyword"] = { fg = c.magenta }
 	end,
 })
 vim.cmd("colorscheme tokyonight-moon")
@@ -143,12 +152,20 @@ harpoon:setup({ settings = { save_on_toggle = true } }) -- q/Esc in the menu als
 
 -- All harpoon keys act on the active list; <leader>H switches it
 local harpoon_list_name = nil -- nil = default list
-local function harpoon_list() return harpoon:list(harpoon_list_name) end
+local function harpoon_list()
+	return harpoon:list(harpoon_list_name)
+end
 
-vim.keymap.set("n", "<leader>a", function() harpoon_list():add() end, { desc = "Harpoon add file" })
-vim.keymap.set("n", "<leader>h", function() harpoon.ui:toggle_quick_menu(harpoon_list()) end, { desc = "Harpoon menu" })
+vim.keymap.set("n", "<leader>a", function()
+	harpoon_list():add()
+end, { desc = "Harpoon add file" })
+vim.keymap.set("n", "<leader>h", function()
+	harpoon.ui:toggle_quick_menu(harpoon_list())
+end, { desc = "Harpoon menu" })
 for i = 1, 5 do
-	vim.keymap.set("n", "<leader>" .. i, function() harpoon_list():select(i) end, { desc = "Harpoon file " .. i })
+	vim.keymap.set("n", "<leader>" .. i, function()
+		harpoon_list():select(i)
+	end, { desc = "Harpoon file " .. i })
 end
 vim.keymap.set("n", "<leader>H", function()
 	vim.ui.select({ "default", "server", "client", "shared" }, { prompt = "Harpoon list" }, function(choice)
